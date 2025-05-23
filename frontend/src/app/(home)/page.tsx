@@ -2,6 +2,7 @@
 
 import { useLLM } from "@/hook/useLLM";
 import React from "react";
+import { User, Bot } from "lucide-react";
 
 interface Chat {
   role: "user" | "llm";
@@ -10,42 +11,26 @@ interface Chat {
 
 export default function Home() {
   const [message, setMessage] = React.useState("");
-
   const [chat, setChat] = React.useState<Chat[]>([]);
-
   const llm = useLLM();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
+    if (!message.trim()) return;
 
-    setChat((chat) => [
-      ...chat,
-      {
-        role: "user",
-        message: message,
-      },
-    ]);
+    setChat((chat) => [...chat, { role: "user", message }]);
+    setMessage("");
 
     llm.mutate(
       { prompt: message },
       {
         onSuccess: (data) => {
-          setChat((chat) => [
-            ...chat,
-            {
-              role: "llm",
-              message: data.message,
-            },
-          ]);
+          setChat((chat) => [...chat, { role: "llm", message: data.message }]);
         },
         onError: () => {
           setChat((chat) => [
             ...chat,
-            {
-              role: "llm",
-              message: "Something went wrong",
-            },
+            { role: "llm", message: "Something went wrong. Please try again." },
           ]);
         },
       }
@@ -53,49 +38,67 @@ export default function Home() {
   };
 
   return (
-    <div className="size-full bg-gradient-to-r from-indigo-200 to-yellow-100">
-      <main className="min-h-screen flex flex-col max-w-7xl mx-auto py-10 px-4 gap-y-4 ">
-        <section className="flex-1  p-4 ">
-          <div className="max-h-[80vh] font-mono overflow-y-auto p-4 space-y-4">
-            {chat.map(({ message, role }: Chat, index) =>
-              role === "user" ? (
-                <div key={index} className="flex w-full justify-end ">
-                  <div className="bg-slate-100 rounded-xl">
-                    <p className=" w-fit border py-2 px-4 rounded-lg shadow-lg border-slate-100 min-w-24 text-center bg-gradient-to-r from-pink-500 to-yellow-500 bg-clip-text text-transparent">
-                      {message}
-                    </p>
-                  </div>
+    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 text-gray-800 flex flex-col">
+      <main className="flex-1 max-w-4xl w-full mx-auto py-10 px-4 flex flex-col gap-6 overflow-hidden">
+        <h1 className="text-4xl font-bold text-center text-blue-700 mb-6">AI Chat Assistant</h1>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+          {chat.map(({ message, role }, index) => (
+            <div key={index} className={flex items-start ${role === "user" ? "justify-end" : "justify-start"}}>
+              {role === "llm" && (
+                <div className="mr-2">
+                  <Bot className="w-6 h-6 text-blue-500" />
                 </div>
-              ) : role === "llm" ? (
-                <div key={index} className="flex w-full justify-start">
-                  <div className="bg-slate-100 rounded-xl">
-                    <p className="w-fit border py-2 px-4 rounded-lg shadow-lg border-slate-100 min-w-24  bg-gradient-to-r from-rose-700 to-pink-600 bg-clip-text text-transparent">
-                      {message}
-                    </p>
-                  </div>
+              )}
+              <div
+                className={`px-4 py-3 rounded-lg max-w-[70%] shadow-md text-sm transition-all ${
+                  role === "user"
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
+                }`}
+              >
+                {message}
+              </div>
+              {role === "user" && (
+                <div className="ml-2">
+                  <User className="w-6 h-6 text-blue-600" />
                 </div>
-              ) : null
-            )}
-          </div>
-        </section>
-        <section className="font-mono">
-          <form className="flex items-center justify-center gap-y-4 ">
-            <input
-              placeholder="What is the color of the sky?"
-              className="p-1 bg-gradient-to-b from-rose-400 to-pink-600 text-white md:p-2 w-6/12 focus:border-r-0 active:border-r-0 outline-0 focus:outline-0 active:outline-0 border border-r-0 rounded-l-md  text-black"
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <button
-              onClick={onSubmit}
-              className="rounded-r p-1 md:p-2  cursor-pointer hover:bg-sky-600 hover:text-white hover:bg-gradient-to-b from-rose-400 to-pink-600 group"
-            >
-              <span className="text-xs bg-gradient-to-b from-rose-700 to-pink-800 bg-clip-text text-transparent group-hover:text-white">
-                Prompt
-              </span>
-            </button>
-          </form>
-        </section>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          className="sticky bottom-0 bg-white border-t border-gray-200 flex gap-3 items-center px-4 py-3 shadow-md rounded-t-xl"
+        >
+          <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 px-4 py-2 border rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+          />
+          <button
+            type="submit"
+            className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            Send
+          </button>
+        </form>
       </main>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.1);
+          border-radius: 3px;
+        }
+      `}</style>
     </div>
   );
 }
